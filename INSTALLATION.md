@@ -24,7 +24,10 @@ python -m pip install --upgrade pip
 
 Other
 ```bash
+# for CUDA 12.1
 pip install torch==2.2.2 torchvision==0.17.2 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cu121
+# or install if faiss with NVIDIA cuVS is needed: then we need CUDA 11.8
+pip install torch==2.2.2 torchvision==0.17.2 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cu118
 ```
 ```bash
 pip install lightning==2.4.0
@@ -35,7 +38,10 @@ pip install joblib==1.4.2
 pip install numpy==1.26.4
 pip install triton==2.2.0
 
+# if using CUDA 12.1
 pip install faiss-gpu-cu12
+# if using NVIDIA cuVS
+conda install -c pytorch -c nvidia -c rapidsai -c conda-forge libnvjitlink faiss-gpu-cuvs=1.11.0
 # or/and
 pip install scann
 ```
