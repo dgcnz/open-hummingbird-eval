@@ -1,0 +1,29 @@
+[project]
+name = "open-hummingbird-eval"
+version = "1.0.0"
+description = "A library to evaluate the effectiveness of spatial features acquired from a vision encoder on a training dataset, to associate themselves to relevant features from a dataset (validation), through the utilization of a k-NN classifier/retriever."
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "torch",
+    "torchvision",
+    "lightning",
+    "numpy<=1.26.4",
+    "scipy",
+    "joblib",
+    "tqdm",
+    "pillow",
+]
+authors = [
+  {name = "Valentinos Pariza", email = "valentinos.pariza@utn.de"},
+  {name = "Mohammadreza Salehi"},
+  {name = "Yuki Asano"},
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# Defines the targets for the wheel build.
+include = ["hbird/**"]
