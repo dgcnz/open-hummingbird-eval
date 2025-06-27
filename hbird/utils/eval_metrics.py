@@ -9,6 +9,9 @@ from collections import defaultdict
 import torch.nn as nn
 from torch.optim.lr_scheduler import StepLR
 
+USE_MIOU_V2 = False
+MIOU_V2_CHUNK_SIZE = 100_000_00  # Number of pixels to process in one chunk for v2 implementation
+
 class PredsmIoU:
     """
     Subclasses Metric. Computes mean Intersection over Union (mIoU) given ground-truth and predictions.
@@ -155,6 +158,9 @@ class PredsmIoU:
         :return: num_pred x num_gt matrix with A[i, j] being the score if ground-truth class i was matched to
         predicted class j.
         """
+        if USE_MIOU_V2:
+            print("Using MIoU v2")
+            return self.compute_score_matrix_v2(num_pred, num_gt, pred, gt, precision_based=precision_based, chunk_size=MIOU_V2_CHUNK_SIZE)
         print("Parallelizing iou computation")
         start = time.time()
         score_mat = Parallel(n_jobs=self.n_jobs)(delayed(self.get_score)(pred, gt, c1, c2, precision_based=precision_based)
