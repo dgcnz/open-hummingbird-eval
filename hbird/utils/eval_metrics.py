@@ -162,6 +162,41 @@ class PredsmIoU:
         print(f"took {time.time() - start} seconds")
         score_mat = np.array(score_mat)
         return score_mat.reshape((num_pred, num_gt)).T
+    
+    def compute_score_matrix_v2(self,
+                                num_pred: int,
+                                num_gt: int,
+                                pred: np.ndarray,
+                                gt: np.ndarray,
+                                precision_based: bool = False,
+                                chunk_size: int = 10_000_000) -> np.ndarray:
+        print(f"IoU Computation (v2): chunksize {chunk_size}")
+        start_t = time.time()
+        hist = np.zeros((num_gt, num_pred), dtype=np.int64)
+        n = pred.shape[0]
+
+        for start in range(0, n, chunk_size):
+            end = min(start + chunk_size, n)
+            g_chunk = gt[start:end].astype(np.int64)
+            p_chunk = pred[start:end].astype(np.int64)
+            idx = g_chunk * num_pred + p_chunk
+            part = np.bincount(idx,
+                            minlength=num_gt * num_pred
+                            ).reshape((num_gt, num_pred))
+            hist += part
+
+        inter = hist.astype(np.float64)
+
+        if precision_based:
+            area_pred = hist.sum(axis=0, keepdims=True)  
+            out =  inter / np.maximum(area_pred, 1e-8)
+        else:
+            area_gt   = hist.sum(axis=1, keepdims=True)  
+            area_pred = hist.sum(axis=0, keepdims=True) 
+            union = area_gt + area_pred - inter
+            out = inter / np.maximum(union, 1e-8)
+        print(f"took {time.time() - start_t} seconds")
+        return out
 
     def _hungarian_match(self, num_pred: int, num_gt: int, pred: np.ndarray, gt: np.ndarray) -> Tuple[np.ndarray,
                                                                                                       np.ndarray]:
@@ -188,3 +223,20 @@ class PredsmIoU:
           
         
 
+if __name__ == "__main__":
+    # small random test
+    num_pred = 151
+    num_gt   = 151
+    n_patches = int(1e6)
+
+    metric = PredsmIoU(num_pred_classes=num_pred, num_gt_classes=num_gt)
+    args = [False, True]
+    pred = np.random.randint(0, num_pred, size=n_patches)
+    gt   = np.random.randint(0, num_gt,   size=n_patches)
+    for pb_arg in args:
+        mat1 = metric.compute_score_matrix(num_pred, num_gt, pred, gt, precision_based=pb_arg)
+        mat2 = metric.compute_score_matrix_v2(num_pred, num_gt, pred, gt, precision_based=pb_arg)
+
+        assert mat1.shape == mat2.shape, "IoU matrix shapes differ!"
+        assert np.allclose(mat1, mat2, atol=1e-8), "IoU matrices differ!"
+        print("compute_score_matrix ≡ compute_score_matrix_v2  (IoU)")
